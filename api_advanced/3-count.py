@@ -22,8 +22,8 @@ def count_words(subreddit, word_list, after=None, count_dict=None):
             if ' ' in word or '.' in word or '!' in word or '_' in word:
                 continue
             if word.lower() in title:
-                count_dict[word] = count_dict.get(word, 0)
-                count_dict[word] += title.count(word.lower())
+                count_dict[word.lower()] = count_dict.get(word.lower(), 0)
+                count_dict[word.lower()] += title.count(word.lower())
     after = data['data']['after']
     if after is None:
         for word, count in sorted(count_dict.items(),

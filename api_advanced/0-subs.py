@@ -3,7 +3,6 @@
     This module contains a function that queries the Reddit API to retrieve
     the total number of subscribers for a given subreddit.
 """
-
 import requests
 
 

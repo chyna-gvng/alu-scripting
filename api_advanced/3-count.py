@@ -3,31 +3,43 @@
 import requests
 
 
-def count_words(subreddit, word_list, after=None, count_dict=None):
+def count_words(subreddit, word_list, instances={}, after="", count=0):
     """ prints a sorted count of given keywords """
-    if count_dict is None:
-        count_dict = {}
+    url = "https://www.reddit.com/r/{}/hot/.json".format(subreddit)
     headers = {'User-Agent': 'Mozilla/5.0'}
-    url = 'https://www.reddit.com/r/{}/hot.json?limit=100'.format(subreddit)
-    if after:
-        url += '&after={}'.format(after)
-    response = requests.get(url, headers=headers, allow_redirects=False)
-    if response.status_code != 200:
+    params = {
+        "after": after,
+        "count": count,
+        "limit": 100
+    }
+    response = requests.get(url, headers=headers, params=params,
+                            allow_redirects=False)
+    try:
+        results = response.json()
+        if response.status_code == 404:
+            raise Exception
+    except Exception:
+        print("")
         return
-    data = response.json()
-    children = data['data']['children']
-    for child in children:
-        title = child['data']['title'].lower()
+
+    results = results.get("data")
+    after = results.get("after")
+    count += results.get("dist")
+    for c in results.get("children"):
+        title = c.get("data").get("title").lower().split()
         for word in word_list:
-            if ' ' in word or '.' in word or '!' in word or '_' in word:
-                continue
             if word.lower() in title:
-                count_dict[word.lower()] = count_dict.get(word.lower(), 0)
-                count_dict[word.lower()] += title.count(word.lower())
-    after = data['data']['after']
+                times = len([t for t in title if t == word.lower()])
+                if instances.get(word) is None:
+                    instances[word] = times
+                else:
+                    instances[word] += times
+
     if after is None:
-        for word, count in sorted(count_dict.items(),
-                                  key=lambda x: (-x[1], x[0])):
-            print('{}: {}'.format(word, count))
+        if len(instances) == 0:
+            print("")
+            return
+        instances = sorted(instances.items(), key=lambda kv: (-kv[1], kv[0]))
+        [print("{}: {}".format(k, v)) for k, v in instances]
     else:
-        count_words(subreddit, word_list, after, count_dict)
+        count_words(subreddit, word_list, instances, after, count)
